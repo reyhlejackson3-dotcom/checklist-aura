@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#232527">
+<title>Shiftable Sprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#232527;
+    --card:#2f3235;
+    --card-hi:#3a3e42;
+    --text:#ffffff;
+    --muted:#9aa0a6;
+    --faint:#6b7075;
+    --ahead:#7ee0a3;
+    --behind:#f2b06b;
+    --onpace:#9ecbff;
+    --r-lg:26px;
+    --r-md:20px;
+    --r-pill:999px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{background:var(--bg);}
+  body{
+    font-family:'Nunito',-apple-system,BlinkMacSystemFont,sans-serif;
+    color:var(--text);
+    max-width:430px;
+    margin:0 auto;
+    min-height:100vh;
+    padding-bottom:110px;
+  }
+
+  /* ---------- header ---------- */
+  header{
+    position:sticky;top:0;z-index:10;
+    background:linear-gradient(to bottom,var(--bg) 82%,rgba(35,37,39,0));
+    padding:calc(env(safe-area-inset-top) + 14px) 18px 18px;
+  }
+  .brand{
+    font-size:12px;font-weight:800;letter-spacing:2.5px;
+    color:var(--faint);text-transform:uppercase;text-align:center;
+    margin-bottom:12px;
+  }
+  .pace-card{
+    background:var(--card);
+    border-radius:var(--r-lg);
+    padding:18px 20px 16px;
+  }
+  .timelines{
+    display:flex;justify-content:space-between;gap:10px;margin-bottom:14px;
+  }
+  .tl{
+    flex:1;background:var(--card-hi);border-radius:var(--r-md);
+    padding:10px 14px;
+  }
+  .tl .lbl{font-size:10.5px;font-weight:800;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;}
+  .tl .val{font-size:15px;font-weight:800;margin-top:2px;}
+  .pace-pill{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    border-radius:var(--r-pill);
+    padding:12px 18px;
+    font-size:17px;font-weight:900;
+    background:var(--card-hi);
+    transition:background .3s,color .3s;
+  }
+  .pace-pill.ahead{background:rgba(126,224,163,.14);color:var(--ahead);}
+  .pace-pill.behind{background:rgba(242,176,107,.14);color:var(--behind);}
+  .pace-pill.onpace{background:rgba(158,203,255,.12);color:var(--onpace);}
+  .pace-dot{width:9px;height:9px;border-radius:50%;background:currentColor;}
+  .progress-wrap{margin-top:14px;}
+  .progress-track{
+    height:10px;border-radius:var(--r-pill);
+    background:var(--card-hi);overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;border-radius:var(--r-pill);
+    background:var(--text);
+    width:0%;
+    transition:width .5s cubic-bezier(.22,1,.36,1);
+  }
+  .progress-meta{
+    display:flex;justify-content:space-between;
+    font-size:11.5px;font-weight:700;color:var(--muted);
+    margin-top:7px;
+  }
+
+  /* ---------- list ---------- */
+  main{padding:6px 18px 0;}
+  .week-label{
+    font-size:11px;font-weight:900;letter-spacing:2px;
+    color:var(--faint);text-transform:uppercase;
+    margin:22px 6px 10px;
+  }
+  .done-stack{
+    background:var(--card);
+    border-radius:var(--r-md);
+    padding:12px 16px;
+    margin-bottom:12px;
+    display:flex;align-items:center;gap:10px;
+    color:var(--muted);font-size:13.5px;font-weight:700;
+    cursor:pointer;
+  }
+  .done-stack .count-bubble{
+    background:var(--card-hi);border-radius:var(--r-pill);
+    padding:4px 12px;font-weight:900;color:var(--text);font-size:13px;
+  }
+  .done-list{display:none;}
+  .done-list.open{display:block;}
+  .task{
+    border-radius:var(--r-lg);
+    margin-bottom:12px;
+    padding:16px 18px;
+    display:flex;gap:14px;align-items:flex-start;
+    transition:opacity .35s,transform .35s;
+  }
+  .task .check{
+    flex-shrink:0;
+    width:34px;height:34px;border-radius:50%;
+    border:2.5px solid var(--faint);
+    display:flex;align-items:center;justify-content:center;
+    background:transparent;cursor:pointer;
+    transition:background .2s,border-color .2s,transform .15s;
+  }
+  .task .check svg{width:16px;height:16px;opacity:0;transition:opacity .2s;}
+  .task .body{flex:1;}
+  .task .due{
+    font-size:11px;font-weight:800;letter-spacing:1.2px;
+    color:var(--muted);text-transform:uppercase;margin-bottom:4px;
+  }
+  .task .title{font-size:16px;font-weight:700;line-height:1.4;}
+
+  .task.current{
+    background:var(--card);
+    box-shadow:0 8px 28px rgba(0,0,0,.28);
+    padding:22px 20px;
+    animation:pop .4s cubic-bezier(.22,1.4,.36,1);
+  }
+  .task.current .check{width:44px;height:44px;border-color:var(--text);}
+  .task.current .check:active{transform:scale(.88);}
+  .task.current .title{font-size:18px;font-weight:800;}
+  .task.current .due{color:var(--text);opacity:.75;}
+
+  .task.completed{
+    background:var(--card);
+    opacity:.55;padding:12px 18px;
+  }
+  .task.completed .check{
+    background:var(--text);border-color:var(--text);
+    width:28px;height:28px;
+  }
+  .task.completed .check svg{opacity:1;}
+  .task.completed .title{
+    font-size:14px;text-decoration:line-through;color:var(--muted);
+  }
+  .task.completed .due{display:none;}
+
+  .task.locked{
+    background:var(--card);
+    opacity:.38;pointer-events:none;
+  }
+  .task.locked .check{border-style:dashed;}
+  .task.locked .title{filter:blur(4.5px);user-select:none;}
+  .task.locked .due{filter:blur(3px);}
+  .lock-tag{
+    font-size:10px;font-weight:900;letter-spacing:1.5px;
+    color:var(--faint);text-transform:uppercase;
+    margin-top:6px;
+  }
+  .hidden-count{
+    text-align:center;color:var(--faint);
+    font-size:12.5px;font-weight:700;
+    padding:6px 0 18px;
+  }
+
+  /* ---------- done state ---------- */
+  .all-done{
+    background:var(--card);border-radius:var(--r-lg);
+    padding:36px 24px;text-align:center;margin-top:20px;
+  }
+  .all-done .big{font-size:40px;margin-bottom:10px;}
+  .all-done h2{font-size:20px;font-weight:900;margin-bottom:6px;}
+  .all-done p{font-size:14px;color:var(--muted);font-weight:600;}
+
+  /* ---------- footer ---------- */
+  footer{
+    position:fixed;bottom:0;left:0;right:0;
+    max-width:430px;margin:0 auto;
+    padding:12px 18px calc(env(safe-area-inset-bottom) + 14px);
+    background:linear-gradient(to top,var(--bg) 70%,rgba(35,37,39,0));
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .undo-btn,.reset-btn{
+    font-family:inherit;font-weight:800;font-size:13px;
+    border:none;border-radius:var(--r-pill);
+    padding:11px 20px;cursor:pointer;
+  }
+  .undo-btn{background:var(--card-hi);color:var(--text);}
+  .undo-btn:disabled{opacity:.35;}
+  .reset-btn{background:transparent;color:var(--faint);}
+
+  @keyframes pop{
+    0%{transform:scale(.96);opacity:0;}
+    100%{transform:scale(1);opacity:1;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">Shiftable Sprint</div>
+  <div class="pace-card">
+    <div class="timelines">
+      <div class="tl">
+        <div class="lbl">Plan finish</div>
+        <div class="val" id="planFinish">—</div>
+      </div>
+      <div class="tl">
+        <div class="lbl">Your finish</div>
+        <div class="val" id="yourFinish">—</div>
+      </div>
+    </div>
+    <div class="pace-pill onpace" id="pacePill">
+      <span class="pace-dot"></span><span id="paceText">On pace</span>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-meta">
+        <span id="taskCount">Task 0 of 0</span>
+        <span id="dueText"></span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="list"></main>
+
+<footer>
+  <button class="reset-btn" id="resetBtn">Reset</button>
+  <button class="undo-btn" id="undoBtn" disabled>Undo last</button>
+</footer>
+
+<script>
+/* ================================================================
+   TASKS — to add Weeks 4–9 later, append objects here.
+   due format: "YYYY-MM-DD". Order in this array = unlock order.
+   ================================================================ */
+const TASKS = [
+  // ---- WEEK 1 · FOUNDATION ----
+  {week:"Week 1 · Foundation", due:"2026-07-02", title:"Install analytics on getshiftable.com (Vercel Analytics)"},
+  {week:"Week 1 · Foundation", due:"2026-07-02", title:"Create tracking spreadsheet: Name | Buyer/Seller | Source | Date | Status | Notes"},
+  {week:"Week 1 · Foundation", due:"2026-07-02", title:"Book SCORE appointment at score.org"},
+  {week:"Week 1 · Foundation", due:"2026-07-03", title:"Write seller pitch draft (free listing until Sept 1, growing buyer base, zero risk)"},
+  {week:"Week 1 · Foundation", due:"2026-07-03", title:"Write buyer pitch draft (why browse Shiftable over Googling tools)"},
+  {week:"Week 1 · Foundation", due:"2026-07-06", title:"List 50 seller prospects (Product Hunt, indie hackers, AI directories) in spreadsheet"},
+  {week:"Week 1 · Foundation", due:"2026-07-06", title:"List 15 buyer communities (subreddits, FB groups, Discords) in spreadsheet"},
+  {week:"Week 1 · Foundation", due:"2026-07-07", title:"Join all 15 communities (no posting yet)"},
+  {week:"Week 1 · Foundation", due:"2026-07-07", title:"Read each community's rules, note which allow links/self-promo"},
+  {week:"Week 1 · Foundation", due:"2026-07-07", title:"Comment genuinely on 3–5 posts (build karma, zero pitching)"},
+  {week:"Week 1 · Foundation", due:"2026-07-08", title:"Confirm Stripe Connect status + list blockers"},
+  {week:"Week 1 · Foundation", due:"2026-07-08", title:"Set Chase bank appointment date with dad"},
+  {week:"Week 1 · Foundation", due:"2026-07-08", title:"Write 3 TikTok/LinkedIn content hooks (building-in-public angle)"},
+
+  // ---- WEEK 2 · SELLER SPRINT #1 ----
+  {week:"Week 2 · Seller Sprint 1", due:"2026-07-13", title:"Post 1 TikTok + 1 LinkedIn post (hook #1)"},
+  {week:"Week 2 · Seller Sprint 1", due:"2026-07-13", title:"Send 10 seller pitches — log every one"},
+  {week:"Week 2 · Seller Sprint 1", due:"2026-07-14", title:"Send 10 seller pitches"},
+  {week:"Week 2 · Seller Sprint 1", due:"2026-07-14", title:"Reply to all responses within 24 hrs"},
+  {week:"Week 2 · Seller Sprint 1", due:"2026-07-15", title:"30-min community session: answer 2–3 questions genuinely"},
+  {week:"Week 2 · Seller Sprint 1", due:"2026-07-15", title:"Send 10 seller pitches"},
+  {week:"Week 2 · Seller Sprint 1", due:"2026-07-16", title:"Send 10 seller pitches"},
+  {week:"Week 2 · Seller Sprint 1", due:"2026-07-16", title:"Engage on 5 posts from business owners (buyer warm-up)"},
+  {week:"Week 2 · Seller Sprint 1", due:"2026-07-17", title:"Send 10 seller pitches (week total: 50)"},
+  {week:"Week 2 · Seller Sprint 1", due:"2026-07-17", title:"Friday review: answer the 5 questions, build next week"},
+
+  // ---- WEEK 3 · SELLER SPRINT #2 ----
+  {week:"Week 3 · Seller Sprint 2", due:"2026-07-20", title:"Post content (iterate on best Week 2 hook)"},
+  {week:"Week 3 · Seller Sprint 2", due:"2026-07-20", title:"Send 10 seller pitches"},
+  {week:"Week 3 · Seller Sprint 2", due:"2026-07-21", title:"Send 10 seller pitches"},
+  {week:"Week 3 · Seller Sprint 2", due:"2026-07-21", title:"Prep SCORE meeting: 3 questions + the referral ask"},
+  {week:"Week 3 · Seller Sprint 2", due:"2026-07-22", title:"First value post in 2 highest-karma communities"},
+  {week:"Week 3 · Seller Sprint 2", due:"2026-07-22", title:"Send 10 seller pitches"},
+  {week:"Week 3 · Seller Sprint 2", due:"2026-07-23", title:"Send 10 seller pitches"},
+  {week:"Week 3 · Seller Sprint 2", due:"2026-07-23", title:"10 buyer touches: message owners posting about problems AI solves"},
+  {week:"Week 3 · Seller Sprint 2", due:"2026-07-24", title:"Send 10 seller pitches (running total ~100)"},
+  {week:"Week 3 · Seller Sprint 2", due:"2026-07-24", title:"Friday review + CHECKPOINT: <5 sellers from 100 pitches = rewrite pitch"},
+];
+
+const STORE_KEY = "shiftable-sprint-v1";
+let doneCount = loadProgress();
+let showDone = false;
+
+function loadProgress(){
+  try{
+    const n = parseInt(localStorage.getItem(STORE_KEY),10);
+    return Number.isFinite(n) ? Math.min(Math.max(n,0),TASKS.length) : 0;
+  }catch(e){ return 0; }
+}
+function saveProgress(){
+  try{ localStorage.setItem(STORE_KEY,String(doneCount)); }catch(e){}
+}
+
+/* ---------- date helpers ---------- */
+function parseDate(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); }
+function today(){ const t=new Date(); return new Date(t.getFullYear(),t.getMonth(),t.getDate()); }
+function fmt(d){ return d.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
+function fmtDow(d){ return d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}); }
+function dayDiff(a,b){ return Math.round((a-b)/86400000); }
+
+/* ---------- pace ---------- */
+function computePace(){
+  const planEnd = parseDate(TASKS[TASKS.length-1].due);
+  if(doneCount >= TASKS.length){
+    return {state:"done", planEnd, yourEnd:today(), diff:dayDiff(today(),planEnd)};
+  }
+  const currentDue = parseDate(TASKS[doneCount].due);
+  const diff = dayDiff(today(), currentDue); // + = behind, - = ahead
+  const yourEnd = new Date(planEnd); yourEnd.setDate(yourEnd.getDate()+Math.max(diff,0)- (diff<0?Math.min(-diff, dayDiff(planEnd,today())):0));
+  return {state: diff>0?"behind":diff<0?"ahead":"onpace", planEnd, yourEnd, diff};
+}
+
+/* ---------- render ---------- */
+const checkSVG = '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#232527" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function render(){
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+
+  /* header */
+  const pace = computePace();
+  const pill = document.getElementById("pacePill");
+  const paceText = document.getElementById("paceText");
+  pill.className = "pace-pill";
+  if(pace.state==="done"){
+    pill.classList.add(pace.diff<=0?"ahead":"behind");
+    paceText.textContent = pace.diff===0 ? "Finished right on time"
+      : pace.diff<0 ? `Finished ${-pace.diff} day${pace.diff===-1?"":"s"} early`
+      : `Finished ${pace.diff} day${pace.diff===1?"":"s"} late`;
+  }else if(pace.state==="behind"){
+    pill.classList.add("behind");
+    paceText.textContent = `${pace.diff} day${pace.diff===1?"":"s"} behind`;
+  }else if(pace.state==="ahead"){
+    pill.classList.add("ahead");
+    paceText.textContent = `${-pace.diff} day${pace.diff===-1?"":"s"} ahead`;
+  }else{
+    pill.classList.add("onpace");
+    paceText.textContent = "On pace";
+  }
+  document.getElementById("planFinish").textContent = fmt(pace.planEnd);
+  document.getElementById("yourFinish").textContent = pace.state==="done" ? fmt(today()) : fmt(pace.yourEnd);
+  document.getElementById("progressFill").style.width = (doneCount/TASKS.length*100)+"%";
+  document.getElementById("taskCount").textContent = `Task ${Math.min(doneCount+1,TASKS.length)} of ${TASKS.length}`;
+  document.getElementById("dueText").textContent = pace.state==="done" ? "" : "Due "+fmtDow(parseDate(TASKS[doneCount].due));
+  document.getElementById("undoBtn").disabled = doneCount===0;
+
+  /* completed stack */
+  if(doneCount>0){
+    const stack = document.createElement("div");
+    stack.className="done-stack";
+    stack.innerHTML = `<span class="count-bubble">${doneCount}</span> completed — tap to ${showDone?"hide":"show"}`;
+    stack.onclick = ()=>{ showDone=!showDone; render(); };
+    list.appendChild(stack);
+    if(showDone){
+      const dl=document.createElement("div");
+      dl.className="done-list open";
+      for(let i=0;i<doneCount;i++){
+        dl.appendChild(taskEl(TASKS[i],"completed",i));
+      }
+      list.appendChild(dl);
+    }
+  }
+
+  if(doneCount>=TASKS.length){
+    const d=document.createElement("div");
+    d.className="all-done";
+    d.innerHTML=`<div class="big">🏁</div><h2>Weeks 1–3 complete</h2><p>Run your Friday review, send Claude the 5 answers, and load Weeks 4+ into this app.</p>`;
+    list.appendChild(d);
+    return;
+  }
+
+  /* current task with week label */
+  const cur = TASKS[doneCount];
+  const wl=document.createElement("div");
+  wl.className="week-label"; wl.textContent=cur.week;
+  list.appendChild(wl);
+  list.appendChild(taskEl(cur,"current",doneCount));
+
+  /* next 3 locked */
+  const upcoming = TASKS.slice(doneCount+1, doneCount+4);
+  upcoming.forEach((t,idx)=>{
+    if(t.week!==cur.week && (idx===0 || upcoming[idx-1].week!==t.week)){
+      const w=document.createElement("div");
+      w.className="week-label"; w.textContent=t.week;
+      list.appendChild(w);
+    }
+    list.appendChild(taskEl(t,"locked"));
+  });
+  const remaining = TASKS.length - doneCount - 1 - upcoming.length;
+  if(remaining>0){
+    const h=document.createElement("div");
+    h.className="hidden-count";
+    h.textContent=`+ ${remaining} more locked`;
+    list.appendChild(h);
+  }
+}
+
+function taskEl(t,state,index){
+  const el=document.createElement("div");
+  el.className="task "+state;
+  const dueDate = fmtDow(parseDate(t.due));
+  el.innerHTML=`
+    <button class="check" aria-label="${state==="completed"?"Uncheck":"Complete"} task">${checkSVG}</button>
+    <div class="body">
+      <div class="due">${dueDate}</div>
+      <div class="title">${t.title}</div>
+      ${state==="locked"?'<div class="lock-tag">Locked</div>':""}
+    </div>`;
+  const btn=el.querySelector(".check");
+  if(state==="current"){
+    btn.onclick=()=>{ doneCount++; saveProgress(); if(navigator.vibrate)navigator.vibrate(30); render(); window.scrollTo({top:0,behavior:"smooth"}); };
+  }else if(state==="completed" && index===doneCount-1){
+    btn.onclick=()=>{ doneCount--; saveProgress(); render(); };
+  }
+  return el;
+}
+
+document.getElementById("undoBtn").onclick=()=>{
+  if(doneCount>0){ doneCount--; saveProgress(); render(); }
+};
+document.getElementById("resetBtn").onclick=()=>{
+  if(confirm("Reset all progress? This can't be undone.")){
+    doneCount=0; showDone=false; saveProgress(); render();
+  }
+};
+
+render();
+</script>
+</body>
+</html>
